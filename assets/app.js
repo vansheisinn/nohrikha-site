@@ -8,7 +8,13 @@
   const message = document.querySelector('#message');
   const download = document.querySelector('#download');
   const status = document.querySelector('#draft-status');
-  const ru = document.documentElement.lang === 'ru';
+  const lang = document.documentElement.lang;
+  const copy = {
+    ru: ['Введите сообщение.', 'Нохриха — черновик. НЕ ОТПРАВЛЕН.', 'Без имени и контактов', 'Имя', 'Скачивание черновика запрошено. Сообщение не отправлено.'],
+    en: ['Please enter a message.', 'Nohrikha — draft. NOT SENT.', 'No name or contact details', 'Name', 'Draft download requested. The message has not been sent.'],
+    de: ['Bitte geben Sie eine Nachricht ein.', 'Nohrikha — Entwurf. NICHT GESENDET.', 'Ohne Namen und Kontaktdaten', 'Name', 'Download des Entwurfs angefordert. Die Nachricht wurde nicht gesendet.'],
+    kk: ['Хабарламаны енгізіңіз.', 'Нохриха — нобай. ЖІБЕРІЛГЕН ЖОҚ.', 'Аты мен байланыс деректері көрсетілмеген', 'Аты', 'Нобайды жүктеп алу сұралды. Хабарлама жіберілген жоқ.']
+  }[lang];
   form.addEventListener('submit', event => event.preventDefault());
   anonymous.addEventListener('change', () => {
     name.disabled = anonymous.checked;
@@ -18,25 +24,25 @@
   form.addEventListener('input', () => { status.textContent = ''; });
   download.disabled = false;
   download.addEventListener('click', () => {
-    message.setCustomValidity(message.value.trim() ? '' : (ru ? 'Введите сообщение.' : 'Please enter a message.'));
+    message.setCustomValidity(message.value.trim() ? '' : copy[0]);
     if (!form.reportValidity()) return;
-    const lines = [ru ? 'Нохриха — черновик. НЕ ОТПРАВЛЕН.' : 'Nohrikha — draft. NOT SENT.'];
+    const lines = [copy[1]];
     if (anonymous.checked) {
-      lines.push(ru ? 'Без имени и контактов' : 'No name or contact details');
+      lines.push(copy[2]);
     } else {
-      if (name.value.trim()) lines.push(`${ru ? 'Имя' : 'Name'}: ${name.value.trim()}`);
+      if (name.value.trim()) lines.push(`${copy[3]}: ${name.value.trim()}`);
       if (email.value.trim()) lines.push(`Email: ${email.value.trim()}`);
     }
     lines.push('', message.value.trim());
     const url = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' }));
     const link = document.createElement('a');
     link.href = url;
-    link.download = `nohrikha-draft-${ru ? 'ru' : 'en'}.txt`;
+    link.download = `nohrikha-draft-${lang}.txt`;
     document.body.append(link);
     link.click();
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    status.textContent = ru ? 'Скачивание черновика запрошено. Сообщение не отправлено.' : 'Draft download requested. The message has not been sent.';
+    status.textContent = copy[4];
   });
   message.addEventListener('input', () => message.setCustomValidity(''));
 })();

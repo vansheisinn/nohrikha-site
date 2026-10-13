@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-for (const lang of ['ru','en']) {
+for (const lang of ['ru','en','de','kk']) {
   const nodes = {};
   for (const id of ['draft-form','anonymous','name','email','message','download','draft-status']) {
     nodes[id] = { value:'', disabled:false, checked:false, textContent:'', handlers:{}, addEventListener(k,f){this.handlers[k]=f;}, setCustomValidity(v){this.error=v;} };

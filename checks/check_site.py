@@ -6,10 +6,12 @@ class Page(HTMLParser):
     def __init__(self):
         super().__init__(); self.tags=[]
     def handle_starttag(self, tag, attrs): self.tags.append((tag, dict(attrs)))
-for file, lang in [(root/'index.html','ru'),(root/'en/index.html','en')]:
+for file, lang in [(root/('index.html' if lang=='ru' else f'{lang}/index.html'),lang) for lang in ['ru','en','de','kk']]:
     p=Page(); p.feed(file.read_text())
     assert ('html',{'lang':lang}) in p.tags
     assert any(t=='meta' and a.get('name')=='robots' and 'noindex' in a['content'] for t,a in p.tags)
+    assert {a.get('hreflang') for t,a in p.tags if t=='link' and a.get('rel')=='alternate'} == {'ru','en','de','kk'}
+    assert sum(t=='a' and a.get('aria-current')=='page' for t,a in p.tags)==1
     ids=[a['id'] for _,a in p.tags if 'id' in a]
     assert len(ids)==len(set(ids))
     for t,a in p.tags:
