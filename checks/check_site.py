@@ -6,7 +6,7 @@ class Page(HTMLParser):
     def __init__(self):
         super().__init__(); self.tags=[]
     def handle_starttag(self, tag, attrs): self.tags.append((tag, dict(attrs)))
-for file, lang in [(root/('index.html' if lang=='ru' else f'{lang}/index.html'),lang) for lang in ['ru','en','de','kk']]:
+for file, lang in [(root/('index.html' if lang=='ru' else f'{"kz" if lang=="kk" else lang}/index.html'),lang) for lang in ['ru','en','de','kk']]:
     p=Page(); p.feed(file.read_text())
     assert ('html',{'lang':lang}) in p.tags
     assert any(t=='meta' and a.get('name')=='robots' and 'noindex' in a['content'] for t,a in p.tags)
