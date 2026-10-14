@@ -3,7 +3,7 @@
 // is configured, and actual delivery and rejection tests are complete.
 window.NOHRIKHA_CONTACT = Object.freeze({
   enabled: false,
-  provider: '',
-  endpoint: '',
+  provider: 'formspree',
+  endpoint: 'https://formspree.io/f/xaeqlnpj',
   spamProtectionVerified: false
 });
