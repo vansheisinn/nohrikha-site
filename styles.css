@@ -24,3 +24,4 @@
 .public-contact summary{cursor:pointer;color:var(--olive-dark);font-size:13px;overflow-wrap:anywhere}
 .public-contact .contact-action{margin-top:16px}.contact-action h2{font-size:30px}
 @media(max-width:700px){.contact-panels{margin-top:30px}.feedback-form{padding:20px}.feedback-panel h2{font-size:32px}}
+.privacy-details{margin:14px 0;color:var(--muted);font-size:12px}.privacy-details summary{cursor:pointer;text-decoration:underline;text-underline-offset:3px}.privacy-details .privacy{margin-top:10px}
