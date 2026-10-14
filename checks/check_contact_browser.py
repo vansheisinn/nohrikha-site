@@ -41,7 +41,7 @@ try:
         browser = p.chromium.launch(executable_path='/usr/bin/chromium', args=['--no-sandbox'])
         for width in [1440, 375, 320]:
             page = browser.new_page(viewport={'width': width, 'height': 900})
-            posts = setup(page)
+            posts = setup(page, dict(config, enabled=False))
             errors = []
             page.on('pageerror', lambda e: errors.append(str(e)))
             for locale in ['', 'en/', 'de/', 'kz/']:
@@ -133,6 +133,19 @@ try:
         assert page.locator('#feedback-form button').is_enabled()
         page.close()
         print('PASS repeat-submission guard, processor error navigation and retained draft after Back')
+
+        # Real public configuration loads, but no real submission is attempted.
+        for locale in ['', 'en/', 'de/', 'kz/']:
+            page = browser.new_page()
+            posts = setup(page)
+            page.goto(base + '/' + locale + 'contact.html')
+            assert page.locator('#feedback-form button').is_enabled()
+            assert page.locator('#feedback-form').get_attribute('action') == 'https://formspree.io/f/xaeqlnpj'
+            assert 'Formspree' in page.locator('#feedback-availability').inner_text()
+            assert page.locator('#feedback-privacy a').get_attribute('href') == 'https://formspree.io/legal/privacy-policy/'
+            assert not posts
+            page.close()
+        print('PASS real public configuration in four languages; no real requests sent')
 
         page = browser.new_page(java_script_enabled=False)
         posts = setup(page, config)
