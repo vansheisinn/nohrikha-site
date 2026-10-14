@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://vansheisinn.github.io/nohrikha-site/sitemap.xml
