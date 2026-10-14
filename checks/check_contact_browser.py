@@ -141,7 +141,8 @@ try:
             page.goto(base + '/' + locale + 'contact.html')
             assert page.locator('#feedback-form button').is_enabled()
             assert page.locator('#feedback-form').get_attribute('action') == 'https://formspree.io/f/xaeqlnpj'
-            assert 'Formspree' in page.locator('#feedback-availability').inner_text()
+            assert page.locator('#feedback-availability').is_hidden()
+            assert 'Formspree' in page.locator('#feedback-privacy').text_content()
             assert page.locator('#feedback-privacy a').get_attribute('href') == 'https://formspree.io/legal/privacy-policy/'
             assert not posts
             page.close()

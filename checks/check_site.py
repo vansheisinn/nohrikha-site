@@ -68,9 +68,9 @@ for file, page in files.items():
         assert any(t == 'main' and a.get('lang') == 'en' for t, a in page.tags), file
     print('PASS', file.relative_to(ROOT))
 
-# Every original RU/EN text node outside navigation is retained, in order.
+# Preserve original RU/EN historical pages; contact interface copy is editable.
 for folder in ['', 'en']:
-    for name in PAGES:
+    for name in ['index.html', 'stories.html', 'timeline.html']:
         path = '/'.join(filter(None, [folder, name]))
         before = subprocess.check_output(['git', 'show', '7ffaf769e2104292a5b95c6a45fcd6f723f98c2f:' + path], cwd=ROOT, text=True)
         original = Page(before)
