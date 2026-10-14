@@ -36,7 +36,18 @@ for file, page in files.items():
     assert any(t == 'a' and a.get('aria-current') == 'page' for t, a in page.tags), file
     current_language = [a for t, a in page.tags if t == 'a' and a.get('aria-current') == 'true']
     assert len(current_language) == 1 and current_language[0]['hreflang'] == lang, file
-    assert not any(t == 'form' for t, _ in page.tags), file
+    forms = [a for t, a in page.tags if t == 'form']
+    assert len(forms) == (1 if file.name == 'contact.html' else 0), file
+    assert any(t == 'a' and a.get('href') == 'https://t.me/nohrikha' for t, a in page.tags), file
+    if forms:
+        assert forms[0].get('method') == 'post' and 'action' not in forms[0], file
+        assert forms[0].get('onsubmit') == 'return false', file
+        assert any(t == 'fieldset' and 'disabled' in a for t, a in page.tags), file
+        inputs = {a.get('name'): a for t, a in page.tags if t in ['input', 'textarea']}
+        assert 'required' not in inputs['name'] and 'required' not in inputs['email'], file
+        assert 'required' in inputs['message'] and 'required' in inputs['consent'], file
+        assert inputs['message']['maxlength'] == '10000', file
+        assert inputs['_gotcha']['tabindex'] == '-1', file
     for t, a in page.tags:
         for attr in ['href', 'src']:
             if attr not in a:
@@ -65,6 +76,8 @@ for folder in ['', 'en']:
         original = Page(before)
         after = iter(files[ROOT / path].text)
         for text in original.text:
+            if text == 'Связаться':
+                continue
             assert any(candidate == text for candidate in after), ('Original text lost', path, text)
         original_images = [a['src'] for t, a in original.tags if t == 'img']
         current_images = [a['src'] for t, a in files[ROOT / path].tags if t == 'img']
