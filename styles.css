@@ -8,3 +8,7 @@
 
 /* Language selection and public contact */
 .headin{gap:22px}.languages{display:flex;align-items:center;gap:10px;margin-left:8px;white-space:nowrap;font:700 11px/1.4 var(--sans);letter-spacing:.1em}.languages a{text-decoration:none;color:var(--muted);padding:6px 2px}.languages a[aria-current=true]{color:var(--ink);border-bottom:2px solid var(--olive)}.contact-action{padding:35px 28px;border:1px solid var(--rule);background:var(--white);align-self:start}.contact-action p{margin:0 0 18px}.contact-action .micro{font-size:12px;margin-top:16px}.contactgrid{align-items:start}@media(max-width:700px){.languages{margin-left:auto;gap:9px}.headin{gap:10px}.menu-btn{order:3}.languages{order:2}.nav{z-index:20}}
+
+/* Draft status; existing visual design is retained. */
+.draft-notice{padding:9px 0;border-bottom:1px solid var(--rule);background:var(--paper2);color:var(--muted);font-size:12px}.languages{flex-wrap:wrap;justify-content:center}.headin{flex-wrap:wrap}@media(max-width:380px){.languages{gap:5px;font-size:10px}.headin{column-gap:7px}.brand{font-size:21px}.menu-btn{padding:8px}.languages{margin-left:0}}
+@media(max-width:700px){h1,h2,h3{overflow-wrap:anywhere}}

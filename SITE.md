@@ -1,20 +1,21 @@
-# NOHRIKHA
+# Nohrikha: техническая версия
 
-A bilingual (Russian / English) family-history website.
+Основа оформления и все исходные RU/EN материалы сохранены из `main` (`7ffaf769e2104292a5b95c6a45fcd6f723f98c2f`).
 
-- Russian home: `index.html`; Russian pages: `stories.html`, `timeline.html`, `contact.html`.
-- English home: `en/index.html`; English pages: `en/stories.html`, `en/timeline.html`, `en/contact.html`.
-- Static assets: `styles.css`, `main.js`; the cover artwork is embedded in the two home pages.
-- English/Russian language links, canonical and hreflang tags, sitemap and robots.txt included.
+Четыре раздела: RU — корень, EN — `en/`, DE — `de/`, KZ — `kz/` (HTML-код `kk`). В каждом: `index.html`, `stories.html`, `timeline.html`, `contact.html`. Переключатель сохраняет выбранную страницу и работает без JavaScript. Ресурсы и языковые ссылки относительные: подходят для корня и `/nohrikha-site/`.
 
-## Deploy
+DE/KZ пока содержат локализованную навигацию и технические уведомления, а исторические тексты — исходный английский вариант, явно размеченный `lang="en"`. Утверждённые переводы готовятся отдельно в ChatGPT. Не считать технические страницы готовыми переводами.
 
-GitHub repository Settings → Pages → Build and deployment → **Deploy from a branch** → `main` → `/(root)` → Save. No build process is needed.
+Все 16 страниц закрыты от индексации метатегом `noindex, nofollow, noarchive`. `robots.txt` разрешает обход, чтобы поисковик мог прочитать noindex; ссылка на sitemap из robots убрана. Существующая карта сайта сохранена как черновой материал, новые страницы в неё не добавляются до утверждения запуска. Noindex не ограничивает публичный доступ.
 
-## Contact
+GitHub Issues остаётся явно публичным каналом с обязательным аккаунтом. Анонимной формы и обработчика отправки нет. Не передавать туда персональные сведения и непубличные документы. Форма подключается отдельным заданием.
 
-The site currently links to public GitHub Issues for incoming stories. This is not an anonymous or private form; GitHub sign-in is required. Do not advertise private/anonymous contact until a dedicated inbox and form endpoint have been configured and tested.
+## Локальная проверка
 
-## Sources
+Из корня: `python3 checks/check_site.py`, `node --check main.js`, `python3 -m http.server 8000 --bind 127.0.0.1`. Сайт статический, сборка и установка зависимостей не нужны.
 
-The first-person family story and anonymized third-person account are based on personal correspondence and family recollections, not independently verified archival documents. Original third-party private messages and email addresses are not stored in the repository. The original play is externally linked and not republished. Artwork is illustrative, not a photograph of Nohrikha.
+Визуальная проверка: главная и внутренние страницы, мобильное меню, переключение языков, отсутствие горизонтального переполнения. Google Fonts унаследованы из main; без сети используются резервные шрифты.
+
+## Ограничения публикации
+
+Не менять DNS, GitHub Pages и CNAME, не разворачивать эту версию и не убирать noindex без отдельного подтверждения владельца. Домены уже зарегистрированы в Dynadot: nohrikha.org — основной, nohrikha.com — будущий редирект. Создание PR не публикует сайт; слияние выполняет владелец после проверки.

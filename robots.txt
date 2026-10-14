@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
-Sitemap: https://vansheisinn.github.io/nohrikha-site/sitemap.xml
+# Draft pages carry noindex; allow crawling so robots can read that directive.
+# Do not submit the retained draft sitemap before owner approval.
