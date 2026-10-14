@@ -12,3 +12,15 @@
 /* Draft status; existing visual design is retained. */
 .draft-notice{padding:9px 0;border-bottom:1px solid var(--rule);background:var(--paper2);color:var(--muted);font-size:12px}.languages{flex-wrap:wrap;justify-content:center}.headin{flex-wrap:wrap}@media(max-width:380px){.languages{gap:5px;font-size:10px}.headin{column-gap:7px}.brand{font-size:21px}.menu-btn{padding:8px}.languages{margin-left:0}}
 @media(max-width:700px){h1,h2,h3{overflow-wrap:anywhere}}
+
+/* Contact channels and accessible feedback form. */
+.telegram-link{color:var(--olive-dark);text-underline-offset:3px;overflow-wrap:anywhere}
+.footerin>.telegram-link{font-size:13px}.contact-panels{min-width:0;display:grid;gap:28px}
+.feedback-panel h2{font-size:36px}.feedback-panel>p{margin:14px 0}
+.feedback-form{margin:0;padding:25px}.feedback-form fieldset{border:0;margin:0;padding:0;min-width:0}
+.feedback-form fieldset:disabled{opacity:1}.feedback-form fieldset:disabled button{opacity:.65}.feedback-form .checkbox-row input{flex:none}
+.feedback-form button{max-width:100%}.feedback-form .status{overflow-wrap:anywhere}
+.feedback-trap,.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+.public-contact summary{cursor:pointer;color:var(--olive-dark);font-size:13px;overflow-wrap:anywhere}
+.public-contact .contact-action{margin-top:16px}.contact-action h2{font-size:30px}
+@media(max-width:700px){.contact-panels{margin-top:30px}.feedback-form{padding:20px}.feedback-panel h2{font-size:32px}}
