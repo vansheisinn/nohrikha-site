@@ -6,8 +6,9 @@ import re
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
-# Digests of normalized heading + all paragraphs from the approved package.
-APPROVED = {('ru', 'my-story'): '3872df86d367dd670a222e68bc4fe58ce6d12c30c108a1b74483cff808b17b84', ('ru', 'second-story'): '535f4b55b0b8ac46f517a8ebe023e4b6921b98387c6486956ae4f9a852fbc710', ('en', 'my-story'): 'd71973e743ec50fdde46170021238f67b92f36106cdacec9faf05da8c4ba2e38', ('en', 'second-story'): '81511d27ff60c132a8c5c52f6589c9858a1717b879191714bd2dd69c8970ac93'}
+# Digests of normalized heading + all paragraphs from the approved package,
+# including the owner-approved omission of the adjective in the closing sentence.
+APPROVED = {('ru', 'my-story'): '3872df86d367dd670a222e68bc4fe58ce6d12c30c108a1b74483cff808b17b84', ('ru', 'second-story'): 'f61dc26025b5a5bd71bfa0a4e9a28eb202de93642ec11313a9cf9998729a78c1', ('en', 'my-story'): 'd71973e743ec50fdde46170021238f67b92f36106cdacec9faf05da8c4ba2e38', ('en', 'second-story'): '2bd93c2a16010188e1dd10aefa923c8a625e8339b4c58dd7d7bad420d5ec9fab'}
 
 class Blocks(HTMLParser):
     def __init__(self, text):

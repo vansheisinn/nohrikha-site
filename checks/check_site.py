@@ -49,7 +49,7 @@ for file, page in files.items():
         assert forms[0].get('onsubmit') == 'return false', file
         assert any(t == 'fieldset' and 'disabled' in a for t, a in page.tags), file
         inputs = {a.get('name'): a for t, a in page.tags if t in ['input', 'textarea']}
-        assert 'required' not in inputs['name'] and 'required' not in inputs['email'], file
+        assert 'required' in inputs['name'] and 'required' in inputs['email'], file
         assert 'required' in inputs['message'] and 'required' in inputs['consent'], file
         assert inputs['message']['maxlength'] == '10000', file
         assert inputs['_gotcha']['tabindex'] == '-1', file

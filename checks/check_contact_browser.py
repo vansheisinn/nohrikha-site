@@ -79,6 +79,21 @@ try:
             consent = page.locator('#feedback-consent')
             send.click()  # Required fields.
             assert not posts
+            name = page.locator('#feedback-name')
+            email = page.locator('#feedback-email')
+            message.fill('This is a local browser test, never delivered.')
+            consent.check()
+            email.fill('sender@example.com')
+            send.click()
+            assert not posts and name.evaluate('(e)=>e.validity.valueMissing')
+            name.fill('   ')
+            send.click()
+            assert not posts and name.evaluate('(e)=>e.validationMessage')
+            name.fill('Test sender')
+            email.fill('')
+            send.click()
+            assert not posts and email.evaluate('(e)=>e.validity.valueMissing')
+            email.fill('sender@example.com')
             message.fill(' ' * 22)
             consent.check()
             send.click()
@@ -88,7 +103,7 @@ try:
             page.locator('#feedback-email').fill('invalid-email')
             send.click()
             assert not posts
-            page.locator('#feedback-email').fill('')
+            page.locator('#feedback-email').fill('sender@example.com')
             consent.uncheck()
             send.click()
             assert not posts
@@ -106,15 +121,17 @@ try:
             assert len(posts) == 1 and posts[0].method == 'POST'
             body = parse_qs(posts[0].post_data)
             assert body['message'] == ['This is a local browser test, never delivered.']
-            assert 'email' not in body and 'name' not in body
+            assert body['name'] == ['Test sender'] and body['email'] == ['sender@example.com']
             assert body['consent'] == ['yes']
             assert body['language'] == [{'': 'ru', 'en/': 'en'}[locale]]
             page.close()
-        print('PASS validation, consent, optional identity, honeypot, bounds and native POST in RU/EN (mock processor)')
+        print('PASS validation, consent, required name/email, honeypot, bounds and native POST in RU/EN (mock processor)')
 
         page = browser.new_page()
         posts = setup(page, config, result_status=500)
         page.goto(base + '/contact.html')
+        page.locator('#feedback-name').fill('Test sender')
+        page.locator('#feedback-email').fill('sender@example.com')
         page.locator('#feedback-message').fill('Local test of an unsuccessful processor response.')
         page.locator('#feedback-consent').check()
         # Calling the handler does not send; second call must be blocked.
