@@ -32,6 +32,32 @@ class Blocks(HTMLParser):
             self.blocks.append(' '.join(''.join(self.value).split()))
             self.collect = False
 
+
+class PlaySource(HTMLParser):
+    def __init__(self, html):
+        super().__init__()
+        self.depth = 0
+        self.parts = []
+        self.feed(html)
+    def handle_starttag(self, tag, attrs):
+        if dict(attrs).get('id') == 'play-text':
+            self.depth = 1
+        elif self.depth:
+            self.depth += 1
+    def handle_endtag(self, tag):
+        if self.depth:
+            self.depth -= 1
+    def handle_data(self, data):
+        if self.depth:
+            self.parts.append(data)
+
+source = (ROOT / 'content/psovaya-ohota.ru.txt').read_text(encoding='utf-8')
+# Integrity baseline for the exact source supplied by the owner, including spaces.
+assert sha256(source.encode()).hexdigest() == '3c73f236ee4f65b4b702fdc20d85ff3285cbf2f22c5bc73bc304dcc173358b70'
+assert re.findall(r'^Действие (?:первое|второе|третье)$', source, re.M) == ['Действие первое', 'Действие второе', 'Действие третье']
+assert len(re.findall(r'^Явление (?:первое|второе|третье)\.?$', source, re.M)) == 8
+assert source.endswith('Звонит в колокольчик.\n\nЗанавес.\n')
+
 for lang, prefix in [('ru', ''), ('en', 'en/')]:
     text = (ROOT / (prefix + 'stories.html')).read_text()
     for identifier in ['my-story', 'second-story']:
@@ -48,11 +74,16 @@ for lang, prefix in [('ru', ''), ('en', 'en/')]:
         assert 'href="' + target + '"' in page
     for metadata in ['rel="canonical"', 'property="og:title"', 'property="og:description"', 'property="og:url"']:
         assert metadata in page
-    # Full play is unavailable: don't mislabel this introduction as its full text.
-    assert not any(marker in page for marker in ['Полный текст произведения', 'The published website must', 'Сюда в готовой версии'])
+    assert not any(marker in page for marker in ['The published website must', 'Сюда в готовой версии'])
+    assert 'lang="ru"' in page
+    assert ''.join(PlaySource(page).parts) == source, ('Play differs from authorized source', lang)
+    assert page.count('class="play-act"') == 3 and page.count('class="play-scene"') == 8
+    for act in range(1, 4):
+        assert f'href="#play-act-{act}"' in page
+    assert 'Original text in Russian' in page if lang == 'en' else 'Полный текст произведения' in page
     if lang == 'en':
         assert 'Original text in Russian' in page
-    print('PASS', lang, 'approved story paragraphs, names, contextual play links and introductory page metadata')
+    print('PASS', lang, 'approved story paragraphs, names, contextual play links, complete verbatim play and page metadata')
 
 for file in ROOT.rglob('*.html'):
     text = file.read_text()
@@ -66,4 +97,4 @@ for suffix in ['/psovaya-ohota.html', '/en/psovaya-ohota.html']:
 assert 'Контакт деда с Нохрихой не доказан' in (ROOT / 'timeline.html').read_text()
 assert 'does not imply that my grandfather met Nohrikha personally' in (ROOT / 'en/timeline.html').read_text()
 print('PASS sitemap, no published email/phone links, chronological uncertainty preserved')
-print('NOT VERIFIED: complete play text; source fetch returned HTTP 403, full text absent from editorial package')
+print('PASS exact play source: 3 acts, 8 scenes, all line breaks and spacing preserved in RU/EN HTML')

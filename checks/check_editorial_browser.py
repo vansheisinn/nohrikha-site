@@ -20,6 +20,7 @@ try:
     with sync_playwright() as p:
         browser = p.chromium.launch(executable_path='/usr/bin/chromium', args=['--no-sandbox'])
         count = 0
+        source = (ROOT / 'content/psovaya-ohota.ru.txt').read_text(encoding='utf-8')
         for width in [1440, 375, 320]:
             page = browser.new_page(viewport={'width': width, 'height': 900})
             errors = []
@@ -31,13 +32,22 @@ try:
                         response = page.goto(base + prefix + locale + file)
                         assert response.status == 200, (width, locale, file)
                         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), (width, locale, file)
+                        if file == 'psovaya-ohota.html':
+                            text = page.locator('#play-text')
+                            assert text.text_content() == source
+                            assert text.get_attribute('lang') == 'ru'
+                            assert text.evaluate('(e)=>getComputedStyle(e).whiteSpace') == 'pre-wrap'
+                            assert text.evaluate('(e)=>getComputedStyle(e).fontSize') == ('22px' if width > 700 else '20px')
+                            # Last stage direction must be readable after scrolling.
+                            page.locator('#play-act-3').scroll_into_view_if_needed()
+                            assert text.text_content().endswith('Занавес.\n')
                         count += 1
-                    for source in ['my-story', 'second-story']:
-                        page.goto(base + prefix + locale + 'stories.html#' + source)
-                        page.locator('#' + source + ' a[href="psovaya-ohota.html"]').click()
+                    for source_id in ['my-story', 'second-story']:
+                        page.goto(base + prefix + locale + 'stories.html#' + source_id)
+                        page.locator('#' + source_id + ' a[href="psovaya-ohota.html"]').click()
                         assert page.url == base + prefix + locale + 'psovaya-ohota.html'
-                        page.locator('.sidebar a[href="stories.html#' + source + '"]').click()
-                        assert page.url == base + prefix + locale + 'stories.html#' + source
+                        page.locator('.sidebar a[href="stories.html#' + source_id + '"]').click()
+                        assert page.url == base + prefix + locale + 'stories.html#' + source_id
                     page.goto(base + prefix + locale + 'psovaya-ohota.html')
                     other = 'RU' if locale else 'EN'
                     page.get_by_role('link', name=other, exact=True).click()
@@ -47,7 +57,7 @@ try:
             page.close()
         browser.close()
         print('PASS', count, 'editorial page layouts; both stories ↔ play, RU/EN switch, root/subpath, no JS errors')
-        print('NOT TESTED: full play completeness; original text unavailable')
+        print('PASS full authorized Russian source in browser DOM, typography and wrapping in root/subpath')
 finally:
     server.shutdown()
     server.server_close()
