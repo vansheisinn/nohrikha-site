@@ -1,5 +1,6 @@
 """Timeline tooltips, anchor navigation and fading highlights; all requests stay local."""
 import threading
+import subprocess
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -46,6 +47,19 @@ def expect_destination(page, event_id):
     return target
 
 
+def expect_clean_hit_areas(page):
+    for hit in page.locator('.timeline-hit').all():
+        expect(hit).to_have_css('fill', 'none')
+        expect(hit).to_have_css('stroke', 'none')
+        expect(hit).to_have_css('pointer-events', 'all')
+        size = hit.evaluate('(e) => ({tag: e.tagName, width: e.getBBox().width, height: e.getBBox().height})')
+        assert size['height'] <= 32, size
+        assert size['width'] <= (82 if size['tag'] == 'rect' else 32), size
+    for ring in page.locator('.timeline-ring').all():
+        expect(ring).to_have_css('fill', 'none')
+    assert page.locator('.chart-scroll svg title').count() == 0, 'The chart title must not cover the event tooltip'
+
+
 try:
     with sync_playwright() as p:
         browser = p.chromium.launch(executable_path='/usr/bin/chromium', args=['--no-sandbox'])
@@ -58,6 +72,10 @@ try:
                     response = page.goto(f'{base}{prefix}{locale}timeline.html')
                     assert response.status == 200
                     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), (width, prefix, locale)
+                    expect_clean_hit_areas(page)
+                    assert '?v=' in page.locator('link[rel="stylesheet"]').get_attribute('href')
+                    chart_name = 'Family timeline, 1930–1970' if locale else 'Семейная хронология с 1930 по 1970 год'
+                    expect(page.get_by_role('group', name=chart_name, exact=True)).to_have_count(1)
                     points = page.locator('.timeline-point')
                     expect(points).to_have_count(len(TARGETS))
                     for index, event_id in enumerate(TARGETS):
@@ -130,6 +148,20 @@ try:
             expect(page).to_have_url(f'{base}/nohrikha-site/{locale}timeline.html#event-1941')
             expect(page.locator('#event-1941')).to_be_in_viewport()
             page.close()
+
+        stale_css = subprocess.check_output(['git', 'show', '39d1935:styles.css'], cwd=ROOT, text=True)
+        for mode in ['stale', 'unavailable']:
+            for locale in ['', 'en/']:
+                page = new_page(browser, viewport={'width': 1440, 'height': 900})
+                page.route('**/styles.css*', lambda route, mode=mode: route.fulfill(
+                    status=200, content_type='text/css', body=stale_css
+                ) if mode == 'stale' else route.abort())
+                page.goto(f'{base}/{locale}timeline.html')
+                expect_clean_hit_areas(page)
+                for ring in page.locator('.timeline-ring').all():
+                    expect(ring).to_have_css('opacity', '0')
+                page.close()
+        print('PASS no black hit areas with stale or unavailable CSS, RU/EN; compact geometry and accessible chart name')
         browser.close()
         assert not errors, errors
         print('PASS RU/EN anchor fallback without JavaScript; no browser errors or external requests')
