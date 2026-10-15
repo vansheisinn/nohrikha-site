@@ -32,3 +32,10 @@
 /* Authorized play: retain source line breaks and spacing in the archive typeface. */
 .play-original{margin:50px 0}.play-text{white-space:pre-wrap;overflow-wrap:anywhere;font:22px/1.75 var(--serif);color:#453c35}.play-act,.play-scene,.play-cast,.play-speaker{font-weight:600}.play-act{font-size:1.3em;scroll-margin-top:30px}.play-scene{font-size:1.1em;scroll-margin-top:30px}
 @media(max-width:700px){.play-text{font-size:20px}.play-original{margin:35px 0}}
+
+/* Paired family and search quotations, stacked on smaller screens. */
+.quote-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.quote-grid .quote-box{max-width:none;grid-template-columns:52px minmax(0,1fr);gap:18px;padding:30px}
+.quote-grid .quote-sprig{font-size:60px}.quote-grid .quote-text{padding-left:22px}
+@media(max-width:999px){.quote-grid{grid-template-columns:1fr}}
+@media(max-width:700px){.quote-grid{gap:0}.quote-grid .quote-box{grid-template-columns:32px minmax(0,1fr);gap:12px;padding:22px 20px}.quote-grid .quote-sprig{font-size:45px}.quote-grid .quote-text{padding-left:18px}}
