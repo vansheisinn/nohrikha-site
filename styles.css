@@ -39,3 +39,28 @@
 .quote-grid .quote-sprig{font-size:60px}.quote-grid .quote-text{padding-left:22px}
 @media(max-width:999px){.quote-grid{grid-template-columns:1fr}}
 @media(max-width:700px){.quote-grid{gap:0}.quote-grid .quote-box{grid-template-columns:32px minmax(0,1fr);gap:12px;padding:22px 20px}.quote-grid .quote-sprig{font-size:45px}.quote-grid .quote-text{padding-left:18px}}
+
+/* Timeline points link to the existing family accounts below the chart. */
+.timeline-point{cursor:pointer;outline:none}
+.timeline-hit{fill:transparent;pointer-events:all}
+.timeline-ring{fill:none;stroke:currentColor;stroke-width:2;opacity:0;transition:opacity .16s}
+.timeline-point:hover .timeline-ring,.timeline-point:focus-visible .timeline-ring{opacity:1}
+.timeline-point:focus-visible{outline:none}
+.timeline-tooltip{
+  position:fixed;z-index:40;max-width:min(36rem,calc(100vw - 32px));
+  padding:12px 16px;border:1px solid var(--rule);border-radius:7px;
+  background:var(--white);color:var(--ink);box-shadow:0 5px 22px rgba(83,66,45,.12);
+  font:15px/1.6 var(--sans);overflow-wrap:anywhere
+}
+.timeline-tooltip[hidden]{display:none}
+.event[id]{scroll-margin-block:24px}
+.event[id]:focus-visible{outline:2px solid var(--olive);outline-offset:3px}
+.event-highlight{animation:timeline-highlight 3s ease-in-out}
+@keyframes timeline-highlight{
+  0%,100%{background-color:var(--white)}
+  18%,38%{background-color:#eae3ce}
+}
+@media(prefers-reduced-motion:reduce){
+  .timeline-ring{transition:none}
+  .event-highlight{animation:none;background-color:#eae3ce}
+}
