@@ -65,7 +65,9 @@ for file, page in files.items():
             if u.fragment:
                 assert any(b.get('id') == unquote(u.fragment) for _, b in files[target].tags), (file, a[attr])
         if t == 'link' and a.get('rel') == 'alternate':
-            target = (file.parent / a['href']).resolve()
+            alternate_url = urlsplit(a['href'])
+            assert alternate_url.scheme == 'https' and alternate_url.netloc == 'nohrikha.com', (file, a)
+            target = (ROOT / unquote(alternate_url.path.lstrip('/'))).resolve()
             target_lang = 'ru' if a['hreflang'] == 'x-default' else a['hreflang']
             assert target.name == file.name, (file, a)
             assert any(t2 == 'html' and b.get('lang') == target_lang for t2, b in files[target].tags)
@@ -79,9 +81,13 @@ for folder in ['', 'en']:
     assert [a['src'] for t, a in before.tags if t == 'img'] == [a['src'] for t, a in files[ROOT / path].tags if t == 'img']
 assert (ROOT / 'main.js').read_text() == subprocess.check_output(['git', 'show', '7ffaf769:main.js'], cwd=ROOT, text=True)
 assert 'Sitemap:' not in (ROOT / 'robots.txt').read_text()
-assert not (ROOT / 'CNAME').exists()
+assert (ROOT / 'CNAME').read_text().strip() == 'nohrikha.com'
 assert 'Disallow: /' not in (ROOT / 'robots.txt').read_text()
 sitemap_urls = [e.text for e in ET.parse(ROOT / 'sitemap.xml').iter('{http://www.sitemaps.org/schemas/sitemap/0.9}loc')]
 canonical_urls = {a['href'] for page in files.values() for t, a in page.tags if t == 'link' and a.get('rel') == 'canonical'}
 assert len(sitemap_urls) == len(files) and set(sitemap_urls) == canonical_urls
+assert all(urlsplit(url).scheme == 'https' and urlsplit(url).netloc == 'nohrikha.com' for url in canonical_urls)
+for page in files.values():
+    canonical = next(a['href'] for t, a in page.tags if t == 'link' and a.get('rel') == 'canonical')
+    assert any(t == 'meta' and a.get('property') == 'og:url' and a.get('content') == canonical for t, a in page.tags)
 print('PASS original home images preserved, main.js unchanged, indexing and domain safeguards')
