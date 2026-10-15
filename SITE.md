@@ -18,4 +18,4 @@
 
 Из корня проекта: `python3 checks/check_site.py`, `python3 checks/check_editorial.py`, `python3 scripts/build_play.py --check`. Для браузерных проверок с Playwright/Chromium: `python3 checks/check_contact_browser.py`, `python3 checks/check_editorial_browser.py`. Локальный сервер: `python3 -m http.server 8000 --bind 127.0.0.1`.
 
-Codex готовит и проверяет ветку; владелец вручную создаёт и объединяет PR. При Pages из main слияние запускает обновление сайта. DNS, CNAME и индексацию менять только по отдельному решению владельца. Зарегистрированные домены: nohrikha.org — основной, nohrikha.com — для будущего перенаправления.
+Codex готовит и проверяет ветку; владелец вручную создаёт и объединяет PR. При Pages из main слияние запускает обновление сайта. DNS, CNAME и индексацию менять только по отдельному решению владельца. Зарегистрированные домены: nohrikha.com — основной, nohrikha.org — для перенаправления на .com. Файл CNAME добавлен владельцем через GitHub Pages. Canonical, og:url, hreflang и sitemap направлены на https://nohrikha.com; noindex сохранён до проверки подключения и отдельного решения об индексации.
