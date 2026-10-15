@@ -96,6 +96,6 @@ assert len(urls) == len(set(urls))
 for suffix in ['/psovaya-ohota.html', '/en/psovaya-ohota.html']:
     assert any(url.endswith(suffix) for url in urls)
 assert 'Контакт деда с Нохрихой не доказан' in (ROOT / 'timeline.html').read_text()
-assert 'does not imply that my grandfather met Nohrikha personally' in (ROOT / 'en/timeline.html').read_text()
+assert 'A direct meeting is unconfirmed' in (ROOT / 'en/timeline.html').read_text()
 print('PASS sitemap, no published email/phone links, chronological uncertainty preserved')
 print('PASS exact play source: 3 acts, 8 scenes, all line breaks and spacing preserved in RU/EN HTML')
