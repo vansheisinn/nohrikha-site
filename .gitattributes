@@ -1,0 +1,3 @@
+
+# Preserve spacing in the authorized verbatim play source.
+content/psovaya-ohota.ru.txt whitespace=-blank-at-eol

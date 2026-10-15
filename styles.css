@@ -28,3 +28,7 @@
 
 /* Comfortable body copy on small screens; display headings retain their scale. */
 @media(max-width:700px){body{font-size:16px}.story-card p,.contactgrid p{font-size:16px}}
+
+/* Authorized play: retain source line breaks and spacing in the archive typeface. */
+.play-original{margin:50px 0}.play-text{white-space:pre-wrap;overflow-wrap:anywhere;font:22px/1.75 var(--serif);color:#453c35}.play-act,.play-scene,.play-cast,.play-speaker{font-weight:600}.play-act{font-size:1.3em;scroll-margin-top:30px}.play-scene{font-size:1.1em;scroll-margin-top:30px}
+@media(max-width:700px){.play-text{font-size:20px}.play-original{margin:35px 0}}

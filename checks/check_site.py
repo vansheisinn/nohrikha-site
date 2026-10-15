@@ -21,7 +21,7 @@ class Page(HTMLParser):
             self.text.append(data.strip())
 
 files = {f: Page(f.read_text()) for f in ROOT.rglob('*.html') if '.git' not in f.parts}
-assert len(files) == 16
+assert len(files) == 18
 for file, page in files.items():
     folder = file.parent.relative_to(ROOT).as_posix()
     lang = LOCALES['' if folder == '.' else folder]
@@ -29,7 +29,8 @@ for file, page in files.items():
     robots = [a for t, a in page.tags if t == 'meta' and a.get('name') == 'robots']
     assert len(robots) == 1 and {'noindex', 'nofollow'} <= set(robots[0]['content'].split(', ')), file
     alternates = [a for t, a in page.tags if t == 'link' and a.get('rel') == 'alternate']
-    assert {a['hreflang'] for a in alternates} == {'ru', 'en', 'de', 'kk', 'x-default'}, file
+    expected_languages = {'ru', 'en', 'x-default'} if file.name == 'psovaya-ohota.html' else {'ru', 'en', 'de', 'kk', 'x-default'}
+    assert {a['hreflang'] for a in alternates} == expected_languages, file
     ids = [a['id'] for _, a in page.tags if 'id' in a]
     assert len(ids) == len(set(ids)), file
     assert sum(t == 'h1' for t, _ in page.tags) == 1, file
@@ -68,22 +69,14 @@ for file, page in files.items():
         assert any(t == 'main' and a.get('lang') == 'en' for t, a in page.tags), file
     print('PASS', file.relative_to(ROOT))
 
-# Preserve original RU/EN historical pages; contact interface copy is editable.
+# Keep existing home illustrations unchanged. Approved editorial replacements
+# and literary links are covered by check_editorial.py.
 for folder in ['', 'en']:
-    for name in ['index.html', 'stories.html', 'timeline.html']:
-        path = '/'.join(filter(None, [folder, name]))
-        before = subprocess.check_output(['git', 'show', '7ffaf769e2104292a5b95c6a45fcd6f723f98c2f:' + path], cwd=ROOT, text=True)
-        original = Page(before)
-        after = iter(files[ROOT / path].text)
-        for text in original.text:
-            if text == 'Связаться':
-                continue
-            assert any(candidate == text for candidate in after), ('Original text lost', path, text)
-        original_images = [a['src'] for t, a in original.tags if t == 'img']
-        current_images = [a['src'] for t, a in files[ROOT / path].tags if t == 'img']
-        assert original_images == current_images, path
+    path = '/'.join(filter(None, [folder, 'index.html']))
+    before = Page(subprocess.check_output(['git', 'show', 'f3f0179:' + path], cwd=ROOT, text=True))
+    assert [a['src'] for t, a in before.tags if t == 'img'] == [a['src'] for t, a in files[ROOT / path].tags if t == 'img']
 assert (ROOT / 'main.js').read_text() == subprocess.check_output(['git', 'show', '7ffaf769:main.js'], cwd=ROOT, text=True)
 assert 'Sitemap:' not in (ROOT / 'robots.txt').read_text()
 assert not (ROOT / 'CNAME').exists()
 assert 'Disallow: /' not in (ROOT / 'robots.txt').read_text()
-print('PASS original RU/EN text and images preserved, main.js unchanged, indexing and domain safeguards')
+print('PASS original home images preserved, main.js unchanged, indexing and domain safeguards')
