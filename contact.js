@@ -7,13 +7,15 @@
   const lang = document.documentElement.lang;
   const copy = {
     ru: {
-      privacy: 'Сообщение и указанные контакты передаются Formspree для рассмотрения обращения и ответа. Сообщения не публикуются автоматически. Политика конфиденциальности',
+      privacy: 'Сообщение, имя и email передаются Formspree для рассмотрения обращения и ответа. Сообщения не публикуются автоматически. Политика конфиденциальности',
+      requiredName: 'Укажите имя.',
       invalid: 'Введите от 20 до 10 000 символов, не считая пробелов по краям.',
       blocked: 'Отправка заблокирована проверкой формы. Проверьте заполнение полей.',
       sending: 'Открываем страницу отправки…'
     },
     en: {
-      privacy: 'Your message and any contact details are sent to Formspree to review and reply to your enquiry. Messages are not published automatically. Privacy policy',
+      privacy: 'Your message, name and email are sent to Formspree to review and reply to your enquiry. Messages are not published automatically. Privacy policy',
+      requiredName: 'Enter your name.',
       invalid: 'Enter 20 to 10,000 characters, excluding leading and trailing whitespace.',
       blocked: 'Submission was blocked by a form check. Check the fields.',
       sending: 'Opening the submission page…'
@@ -29,6 +31,7 @@
   const fieldset = form.querySelector('fieldset');
   const status = document.querySelector('#feedback-status');
   const message = form.elements.namedItem('message');
+  const contactName = form.elements.namedItem('name');
   const trap = form.elements.namedItem('_gotcha');
   const submit = form.querySelector('button[type="submit"]');
   let sending = false;
@@ -44,6 +47,7 @@
   link.rel = 'noopener noreferrer';
   privacy.append(link);
   message.addEventListener('input', () => message.setCustomValidity(''));
+  contactName.addEventListener('input', () => contactName.setCustomValidity(''));
   // Returning true invokes the browser's native HTTPS POST, including server CAPTCHA.
   form.onsubmit = () => {
     if (sending) return false;
@@ -51,9 +55,12 @@
       status.textContent = copy.blocked;
       return false;
     }
+    const name = contactName.value.trim();
+    contactName.setCustomValidity(name ? '' : copy.requiredName);
     const text = message.value.trim();
     message.setCustomValidity(text.length < 20 || text.length > 10000 ? copy.invalid : '');
     if (!form.reportValidity()) return false;
+    contactName.value = name;
     message.value = text;
     sending = true;
     submit.disabled = true;
