@@ -42,8 +42,8 @@
 
 /* Timeline points link to the existing family accounts below the chart. */
 .timeline-point{cursor:pointer;outline:none}
-.timeline-hit{fill:transparent;pointer-events:all}
-.timeline-ring{fill:none;stroke:currentColor;stroke-width:2;opacity:0;transition:opacity .16s}
+.timeline-hit{fill:none;pointer-events:all}
+.timeline-ring{fill:none;stroke:currentColor;stroke-width:1.5;opacity:0;transition:opacity .16s}
 .timeline-point:hover .timeline-ring,.timeline-point:focus-visible .timeline-ring{opacity:1}
 .timeline-point:focus-visible{outline:none}
 .timeline-tooltip{
