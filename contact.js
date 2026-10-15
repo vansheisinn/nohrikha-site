@@ -18,18 +18,6 @@
       blocked: 'Submission was blocked by a form check. Check the fields.',
       sending: 'Opening the submission page…'
     },
-    de: {
-      privacy: 'Nachricht und angegebene Kontaktdaten werden über Formspree zur Bearbeitung und Beantwortung übermittelt. Keine automatische Veröffentlichung. Datenschutzerklärung',
-      invalid: 'Geben Sie 20 bis 10.000 Zeichen ohne Leerzeichen am Anfang und Ende ein.',
-      blocked: 'Eine Formularprüfung hat den Versand blockiert. Prüfen Sie die Felder.',
-      sending: 'Die Versandseite wird geöffnet…'
-    },
-    kk: {
-      privacy: 'Хабарлама мен көрсетілген байланыс деректері өтінішті қарау және жауап беру үшін Formspree сервисіне беріледі. Хабарламалар автоматты түрде жарияланбайды. Құпиялылық саясаты',
-      invalid: 'Басы мен соңындағы бос орындарды есептемегенде, 20–10 000 таңба енгізіңіз.',
-      blocked: 'Нысанды тексеру жіберуді бұғаттады. Өрістерді тексеріңіз.',
-      sending: 'Жіберу беті ашылуда…'
-    }
   }[lang] || null;
   const config = window.NOHRIKHA_CONTACT;
   // The endpoint is public, not a credential. Restrict where visitor data can go.

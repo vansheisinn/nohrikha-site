@@ -3,10 +3,11 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlsplit, unquote
 import subprocess
+import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
-PAGES = ['index.html', 'stories.html', 'timeline.html', 'contact.html']
-LOCALES = {'': 'ru', 'en': 'en', 'de': 'de', 'kz': 'kk'}
+PAGES = ['index.html', 'stories.html', 'timeline.html', 'contact.html', 'psovaya-ohota.html']
+LOCALES = {'': 'ru', 'en': 'en'}
 
 class Page(HTMLParser):
     def __init__(self, text):
@@ -21,7 +22,8 @@ class Page(HTMLParser):
             self.text.append(data.strip())
 
 files = {f: Page(f.read_text()) for f in ROOT.rglob('*.html') if '.git' not in f.parts}
-assert len(files) == 18
+assert set(files) == {ROOT / folder / name for folder in LOCALES for name in PAGES}
+assert not (ROOT / 'de').exists() and not (ROOT / 'kz').exists()
 for file, page in files.items():
     folder = file.parent.relative_to(ROOT).as_posix()
     lang = LOCALES['' if folder == '.' else folder]
@@ -29,7 +31,7 @@ for file, page in files.items():
     robots = [a for t, a in page.tags if t == 'meta' and a.get('name') == 'robots']
     assert len(robots) == 1 and {'noindex', 'nofollow'} <= set(robots[0]['content'].split(', ')), file
     alternates = [a for t, a in page.tags if t == 'link' and a.get('rel') == 'alternate']
-    expected_languages = {'ru', 'en', 'x-default'} if file.name == 'psovaya-ohota.html' else {'ru', 'en', 'de', 'kk', 'x-default'}
+    expected_languages = {'ru', 'en', 'x-default'}
     assert {a['hreflang'] for a in alternates} == expected_languages, file
     ids = [a['id'] for _, a in page.tags if 'id' in a]
     assert len(ids) == len(set(ids)), file
@@ -37,6 +39,8 @@ for file, page in files.items():
     assert any(t == 'a' and a.get('aria-current') == 'page' for t, a in page.tags), file
     current_language = [a for t, a in page.tags if t == 'a' and a.get('aria-current') == 'true']
     assert len(current_language) == 1 and current_language[0]['hreflang'] == lang, file
+    language_links = [a for t, a in page.tags if t == 'a' and 'hreflang' in a]
+    assert len(language_links) == 2 and {a['hreflang'] for a in language_links} == {'ru', 'en'}, file
     forms = [a for t, a in page.tags if t == 'form']
     assert len(forms) == (1 if file.name == 'contact.html' else 0), file
     assert any(t == 'a' and a.get('href') == 'https://t.me/nohrikha' for t, a in page.tags), file
@@ -65,8 +69,6 @@ for file, page in files.items():
             target_lang = 'ru' if a['hreflang'] == 'x-default' else a['hreflang']
             assert target.name == file.name, (file, a)
             assert any(t2 == 'html' and b.get('lang') == target_lang for t2, b in files[target].tags)
-    if lang in ['de', 'kk']:
-        assert any(t == 'main' and a.get('lang') == 'en' for t, a in page.tags), file
     print('PASS', file.relative_to(ROOT))
 
 # Keep existing home illustrations unchanged. Approved editorial replacements
@@ -79,4 +81,7 @@ assert (ROOT / 'main.js').read_text() == subprocess.check_output(['git', 'show',
 assert 'Sitemap:' not in (ROOT / 'robots.txt').read_text()
 assert not (ROOT / 'CNAME').exists()
 assert 'Disallow: /' not in (ROOT / 'robots.txt').read_text()
+sitemap_urls = [e.text for e in ET.parse(ROOT / 'sitemap.xml').iter('{http://www.sitemaps.org/schemas/sitemap/0.9}loc')]
+canonical_urls = {a['href'] for page in files.values() for t, a in page.tags if t == 'link' and a.get('rel') == 'canonical'}
+assert len(sitemap_urls) == len(files) and set(sitemap_urls) == canonical_urls
 print('PASS original home images preserved, main.js unchanged, indexing and domain safeguards')

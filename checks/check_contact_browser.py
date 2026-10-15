@@ -44,7 +44,7 @@ try:
             posts = setup(page, dict(config, enabled=False))
             errors = []
             page.on('pageerror', lambda e: errors.append(str(e)))
-            for locale in ['', 'en/', 'de/', 'kz/']:
+            for locale in ['', 'en/']:
                 for file in ['index.html', 'stories.html', 'timeline.html', 'contact.html']:
                     assert page.goto(base + '/' + locale + file).status == 200
                     assert page.locator('a[href="https://t.me/nohrikha"]').count() >= 1
@@ -56,7 +56,7 @@ try:
             if width == 375:
                 page.screenshot(path='/tmp/nohrikha-contact-form.png', full_page=True)
             page.close()
-        print('PASS 48 layouts, Telegram everywhere, no JS errors; unconfigured form cannot send')
+        print('PASS 24 layouts, Telegram everywhere, no JS errors; unconfigured form cannot send')
 
         for settings in [dict(config, enabled=False), dict(config, spamProtectionVerified=False),
                          dict(config, endpoint='https://example.com/collect'),
@@ -70,7 +70,7 @@ try:
             page.close()
         print('PASS configuration guard: disabled, unverified spam settings and invalid endpoints')
 
-        for locale in ['', 'en/', 'de/', 'kz/']:
+        for locale in ['', 'en/']:
             page = browser.new_page()
             posts = setup(page, config)
             page.goto(base + '/' + locale + 'contact.html')
@@ -108,9 +108,9 @@ try:
             assert body['message'] == ['This is a local browser test, never delivered.']
             assert 'email' not in body and 'name' not in body
             assert body['consent'] == ['yes']
-            assert body['language'] == [{'': 'ru', 'en/': 'en', 'de/': 'de', 'kz/': 'kk'}[locale]]
+            assert body['language'] == [{'': 'ru', 'en/': 'en'}[locale]]
             page.close()
-        print('PASS validation, consent, optional identity, honeypot, bounds and native POST in four languages (mock processor)')
+        print('PASS validation, consent, optional identity, honeypot, bounds and native POST in RU/EN (mock processor)')
 
         page = browser.new_page()
         posts = setup(page, config, result_status=500)
@@ -135,7 +135,7 @@ try:
         print('PASS repeat-submission guard, processor error navigation and retained draft after Back')
 
         # Real public configuration loads, but no real submission is attempted.
-        for locale in ['', 'en/', 'de/', 'kz/']:
+        for locale in ['', 'en/']:
             page = browser.new_page()
             posts = setup(page)
             page.goto(base + '/' + locale + 'contact.html')
@@ -146,7 +146,7 @@ try:
             assert page.locator('#feedback-privacy a').get_attribute('href') == 'https://formspree.io/legal/privacy-policy/'
             assert not posts
             page.close()
-        print('PASS real public configuration in four languages; no real requests sent')
+        print('PASS real public configuration in RU/EN; no real requests sent')
 
         page = browser.new_page(java_script_enabled=False)
         posts = setup(page, config)
