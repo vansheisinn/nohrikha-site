@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
-# Draft pages carry noindex; allow crawling so robots can read that directive.
-# Do not submit the retained draft sitemap before owner approval.
+
+Sitemap: https://nohrikha.com/sitemap.xml
