@@ -2,6 +2,7 @@
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlsplit, unquote
+from urllib.robotparser import RobotFileParser
 import subprocess
 import xml.etree.ElementTree as ET
 
@@ -28,8 +29,11 @@ for file, page in files.items():
     folder = file.parent.relative_to(ROOT).as_posix()
     lang = LOCALES['' if folder == '.' else folder]
     assert any(t == 'html' and a.get('lang') == lang for t, a in page.tags), file
-    robots = [a for t, a in page.tags if t == 'meta' and a.get('name') == 'robots']
-    assert len(robots) == 1 and {'noindex', 'nofollow'} <= set(robots[0]['content'].split(', ')), file
+    robots = [a for t, a in page.tags if t == 'meta' and a.get('name', '').lower() == 'robots']
+    assert len(robots) == 1 and {d.strip().lower() for d in robots[0]['content'].split(',')} == {'index', 'follow'}, file
+    bot_directives = [a for t, a in page.tags if t == 'meta' and a.get('name', '').lower() in {'robots', 'googlebot', 'bingbot', 'yandex'}]
+    for directives in bot_directives:
+        assert not {'noindex', 'nofollow', 'noarchive', 'none'} & {d.strip().lower() for d in directives.get('content', '').split(',')}, (file, directives)
     alternates = [a for t, a in page.tags if t == 'link' and a.get('rel') == 'alternate']
     expected_languages = {'ru', 'en', 'x-default'}
     assert {a['hreflang'] for a in alternates} == expected_languages, file
@@ -80,14 +84,17 @@ for folder in ['', 'en']:
     before = Page(subprocess.check_output(['git', 'show', 'f3f0179:' + path], cwd=ROOT, text=True))
     assert [a['src'] for t, a in before.tags if t == 'img'] == [a['src'] for t, a in files[ROOT / path].tags if t == 'img']
 assert (ROOT / 'main.js').read_text() == subprocess.check_output(['git', 'show', '7ffaf769:main.js'], cwd=ROOT, text=True)
-assert 'Sitemap:' not in (ROOT / 'robots.txt').read_text()
 assert (ROOT / 'CNAME').read_text().strip() == 'nohrikha.com'
-assert 'Disallow: /' not in (ROOT / 'robots.txt').read_text()
+robots = RobotFileParser()
+robots.parse((ROOT / 'robots.txt').read_text().splitlines())
+assert robots.site_maps() == ['https://nohrikha.com/sitemap.xml']
 sitemap_urls = [e.text for e in ET.parse(ROOT / 'sitemap.xml').iter('{http://www.sitemaps.org/schemas/sitemap/0.9}loc')]
 canonical_urls = {a['href'] for page in files.values() for t, a in page.tags if t == 'link' and a.get('rel') == 'canonical'}
 assert len(sitemap_urls) == len(files) and set(sitemap_urls) == canonical_urls
 assert all(urlsplit(url).scheme == 'https' and urlsplit(url).netloc == 'nohrikha.com' for url in canonical_urls)
+for bot in ['Googlebot', 'YandexBot', 'bingbot', '*']:
+    assert all(robots.can_fetch(bot, url) for url in sitemap_urls), bot
 for page in files.values():
     canonical = next(a['href'] for t, a in page.tags if t == 'link' and a.get('rel') == 'canonical')
     assert any(t == 'meta' and a.get('property') == 'og:url' and a.get('content') == canonical for t, a in page.tags)
-print('PASS original home images preserved, main.js unchanged, indexing and domain safeguards')
+print('PASS original home images preserved, main.js unchanged, RU/EN indexing allowed, sitemap advertised on nohrikha.com')
