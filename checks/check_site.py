@@ -29,6 +29,26 @@ for file, page in files.items():
     folder = file.parent.relative_to(ROOT).as_posix()
     lang = LOCALES['' if folder == '.' else folder]
     assert any(t == 'html' and a.get('lang') == lang for t, a in page.tags), file
+    # Messenger crawlers read static head metadata and fetch a public image URL;
+    # the original data-URI illustration in the body cannot serve that purpose.
+    head = Page(file.read_text().split('</head>', 1)[0])
+    metadata = {}
+    for tag, attrs in head.tags:
+        if tag == 'meta':
+            key = attrs.get('property') or attrs.get('name')
+            assert key not in metadata, (file, 'duplicate metadata', key)
+            metadata[key] = attrs.get('content')
+    image_url = f'https://nohrikha.com/assets/share/nohrikha-{lang}-v1.jpg'
+    assert metadata['og:image'] == metadata['og:image:secure_url'] == metadata['twitter:image'] == image_url, file
+    image_file = ROOT / urlsplit(image_url).path.lstrip('/')
+    assert image_file.is_file() and image_file.read_bytes().startswith(b'\xff\xd8'), image_file
+    assert 0 < image_file.stat().st_size < 300_000, image_file
+    assert metadata['og:image:type'] == 'image/jpeg', file
+    assert (metadata['og:image:width'], metadata['og:image:height']) == ('1200', '630'), file
+    assert metadata['og:image:alt'] == metadata['twitter:image:alt'] and metadata['og:image:alt'], file
+    assert metadata['twitter:card'] == 'summary_large_image', file
+    assert metadata['twitter:title'] == metadata['og:title'], file
+    assert metadata['twitter:description'] == metadata['og:description'] == metadata['description'], file
     robots = [a for t, a in page.tags if t == 'meta' and a.get('name', '').lower() == 'robots']
     assert len(robots) == 1 and {d.strip().lower() for d in robots[0]['content'].split(',')} == {'index', 'follow'}, file
     bot_directives = [a for t, a in page.tags if t == 'meta' and a.get('name', '').lower() in {'robots', 'googlebot', 'bingbot', 'yandex'}]
