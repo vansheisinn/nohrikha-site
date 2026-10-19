@@ -1,3 +1,3 @@
-// Public configuration only. Enable after the Free Worker and D1 have been tested.
-// Worker: https://nohrikha-counter.vansheisinn.workers.dev (no trailing path).
-window.NOHRIKHA_COUNTER = Object.freeze({ endpoint: '' });
+// Public address only. The owner verified /health and /stats on 2026-10-19.
+// Set endpoint to '' to disable collection; keep server secrets in Cloudflare.
+window.NOHRIKHA_COUNTER = Object.freeze({ endpoint: 'https://nohrikha-counter.vansheisinn.workers.dev' });

@@ -46,12 +46,13 @@ class Mock:
             if path.is_dir():
                 path = path / 'index.html'
             assert path.is_relative_to(ROOT)
-            if path.name == 'counter-config.js' and self.enabled:
-                await route.fulfill(content_type='text/javascript', body='window.NOHRIKHA_COUNTER={endpoint:' + json.dumps(ENDPOINT) + '};')
+            if path.name == 'counter-config.js' and self.enabled is not None:
+                endpoint = ENDPOINT if self.enabled else ''
+                await route.fulfill(content_type='text/javascript', body='window.NOHRIKHA_COUNTER={endpoint:' + json.dumps(endpoint) + '};')
             else:
                 await route.fulfill(path=str(path))
             return
-        if url.netloc != 'nohrikha-counter.test':
+        if url.netloc not in ['nohrikha-counter.test', 'nohrikha-counter.vansheisinn.workers.dev']:
             await route.abort()
             return
         self.calls.append(request)
@@ -125,6 +126,26 @@ async def main():
         assert not mock.calls and not errors
         await context.close()
         print('PASS disabled configuration: all 10 pages, no server requests or widget')
+
+        # Load the actual committed config, intercepting every production request.
+        # This catches missing/stale page assets and an accidentally empty endpoint.
+        mock = Mock(enabled=None)
+        context = await context_for(browser, mock)
+        page = await context.new_page()
+        errors = []
+        page.on('pageerror', lambda error: errors.append(str(error)))
+        views = 0
+        for prefix in ['', '/en']:
+            for file in ['index.html', 'stories.html', 'timeline.html', 'contact.html', 'psovaya-ohota.html']:
+                await page.goto(SITE + prefix + '/' + file)
+                views += 1
+                await settle(page, mock, views)
+                assert await page.locator('.visitor-counter').count() == 1
+        assert len(mock.posts) == 10 and sum(body['first'] for body in mock.posts) == 1
+        assert {urlsplit(request.url).netloc for request in mock.calls} == {'nohrikha-counter.vansheisinn.workers.dev'}
+        assert not errors
+        await context.close()
+        print('PASS committed production config: all 10 pages count views, one daily browser, no external submissions')
 
         for width in [320, 375, 430, 1440]:
             for prefix in ['', '/en']:
