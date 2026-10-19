@@ -96,8 +96,9 @@ class Mock:
 
 
 async def settle(page, mock, views):
+    shows_stats = urlsplit(page.url).path in ['/contact.html', '/en/contact.html']
     for _ in range(100):
-        if sum(d['views'] for d in mock.daily.values()) >= views and await page.locator('.visitor-counter').count():
+        if sum(d['views'] for d in mock.daily.values()) >= views and await page.locator('.visitor-counter').count() == int(shows_stats):
             return
         await page.wait_for_timeout(25)
     raise AssertionError(('counter did not settle', views, mock.posts))
@@ -140,12 +141,13 @@ async def main():
                 await page.goto(SITE + prefix + '/' + file)
                 views += 1
                 await settle(page, mock, views)
-                assert await page.locator('.visitor-counter').count() == 1
+                assert await page.locator('.visitor-counter').count() == int(file == 'contact.html')
         assert len(mock.posts) == 10 and sum(body['first'] for body in mock.posts) == 1
+        assert sum(urlsplit(request.url).path == '/stats' for request in mock.calls) == 2
         assert {urlsplit(request.url).netloc for request in mock.calls} == {'nohrikha-counter.vansheisinn.workers.dev'}
         assert not errors
         await context.close()
-        print('PASS committed production config: all 10 pages count views, one daily browser, no external submissions')
+        print('PASS all 10 pages count views, one daily browser; only RU/EN contacts render and fetch statistics')
 
         for width in [320, 375, 430, 1440]:
             for prefix in ['', '/en']:
@@ -159,19 +161,41 @@ async def main():
                 assert await page.evaluate('localStorage.getItem(' + json.dumps(KEY) + ')') == mock.day
                 await page.locator('.visitor-counter summary').click()
                 assert await page.locator('.visitor-counter tbody tr').count() == 7
+                assert await page.evaluate('''() => {
+                    const widget = document.querySelector('.visitor-counter');
+                    const background = getComputedStyle(widget.closest('.footer')).backgroundColor;
+                    const texts = widget.querySelectorAll('summary,h2,th,td,li,p');
+                    return [...texts].every(node => getComputedStyle(node).color === background)
+                        && getComputedStyle(widget).borderTopWidth === '0px'
+                        && [...widget.querySelectorAll('th,td')].every(node => getComputedStyle(node).borderBottomWidth === '0px')
+                        && getComputedStyle(widget.querySelector('summary')).listStyleType === 'none';
+                }'''), (width, prefix, 'counter must blend into footer')
                 assert await page.evaluate('document.documentElement.scrollWidth <= innerWidth'), (width, prefix)
                 assert await page.locator('#feedback-form button[type=submit]').is_enabled()
                 if width == 375 and not prefix:
                     await page.locator('.visitor-counter').screenshot(path='/tmp/nohrikha-counter-mobile.png')
+                assert await page.evaluate('''() => {
+                    const widget = document.querySelector('.visitor-counter');
+                    const range = document.createRange();
+                    range.selectNodeContents(widget);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    const style = getComputedStyle(widget.querySelector('summary'), '::selection');
+                    return selection.toString().includes('1') && style.color !== style.backgroundColor
+                        && style.backgroundColor !== 'rgba(0, 0, 0, 0)';
+                }'''), (width, prefix, 'selected statistics must remain readable')
+                if width == 375 and not prefix:
+                    await page.locator('.visitor-counter').screenshot(path='/tmp/nohrikha-counter-selected.png')
                 await context.close()
-        print('PASS 8 RU/EN layouts, 320–1440px, native form remains enabled, no overflow')
+        print('PASS 8 RU/EN layouts, 320–1440px: text matches footer, selection readable, no borders/marker or overflow, form enabled')
 
         mock = Mock()
         context = await context_for(browser, mock)
         page = await context.new_page()
         await page.goto(SITE + '/?utm_source=whatsapp')
         await settle(page, mock, 1)
-        await page.goto(SITE + '/en/stories.html')
+        await page.goto(SITE + '/en/contact.html')
         await settle(page, mock, 2)
         assert not mock.posts[-1]['first']
         await page.evaluate('location.hash="my-story"')

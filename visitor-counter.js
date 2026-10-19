@@ -13,6 +13,7 @@
   var key = 'nohrikha.counter.lastDay';
   var sources = ['direct', 'google', 'yandex', 'bing', 'telegram', 'whatsapp', 'social', 'other'];
   var english = document.documentElement.lang === 'en';
+  var showStats = location.pathname === '/contact.html' || location.pathname === '/en/contact.html';
   var labels = english ? {
     today: 'Visitors today', total: 'Total page views', days: 'Last 7 days',
     sources: 'Sources · last 30 days', date: 'Date', visitors: 'Visitors', views: 'Views',
@@ -144,7 +145,7 @@
         try { await navigator.locks.request(key, submit); } catch (_) { /* fail closed */ }
       } else { await submit(); }
     }
-    render(await request('/stats'));
+    if (showStats) render(await request('/stats'));
   }
 
   document.addEventListener('visibilitychange', function () { void record(); });
