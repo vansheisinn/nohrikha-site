@@ -1,25 +1,22 @@
 # Nohrikha aggregate counter
 
-Small, dependency-free Deno + Deno KV service. The website stays on GitHub
-Pages. Deployment is not enabled by adding these files.
+Own Cloudflare Worker + D1 service; the website stays on GitHub Pages.
+Public aggregate statistics, no visitor IDs, IP storage or request logging.
 
-- App directory: `counter`.
-- Start: `deno task start`.
-- Assign a Deno KV database to the production app.
-- Set the server secret `COUNTER_SIGNING_KEY` to a random value of at least 32
-  bytes.
+- Worker: `nohrikha-counter.vansheisinn.workers.dev`.
+- D1 binding: `DB`, database `nohrikha-counter` (ID in `wrangler.jsonc`).
+- Tables initialize automatically from `schema.ts`; existing counts are never reset.
+- Runtime secret: `COUNTER_SIGNING_KEY`, random and at least 32 bytes.
 - Optional `MAX_DAILY_VIEWS`: 5000 by default.
-- Do not set `COUNTER_KV_PATH` on Deploy; that setting is for local testing
-  only.
-- Check: `deno task check && deno task test`.
+- Dashboard editor: paste the complete `worker.bundle.js`, then Deploy.
+- For dashboard deployment, configure the D1 binding, secret and observability
+  settings in the dashboard; Wrangler settings are not applied by pasting JS.
+- Development: `npm ci`, `npm run check`, `npm test`, `npm run bundle`.
+- Local tests use workerd with real local D1. No cloud credentials are needed.
+- Production code has no third-party runtime dependencies.
 
-`GET /health` checks the running process; `GET /stats` reads public aggregate
-data. Collection is limited to the site's exact origin. A signed short-lived
-challenge, bounded in-memory replay cache and atomic daily cap provide
-best-effort abuse protection. They do not prevent distributed replay or
-deliberate inflation. No request logging, third-party dependencies, persistent
-visitor IDs or IP storage.
-
-Before deployment, confirm that the current Free plan and KV are usable without
-adding a card or enabling paid billing. Full owner instructions and limitations:
-[COUNTER_SETUP.md](../COUNTER_SETUP.md).
+`GET /health` checks the process; `GET /stats` reads public aggregates.
+HMAC challenges, a bounded in-memory replay cache, request budgets and a global
+atomic daily cap provide best-effort protection; distributed inflation remains
+possible. No public reset or delete route. Remain on Workers Free, without a
+payment card or paid upgrades. Full instructions: [COUNTER_SETUP.md](../COUNTER_SETUP.md).

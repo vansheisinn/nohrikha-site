@@ -9,9 +9,13 @@ export const SOURCES = [
   "social",
   "other",
 ] as const;
-type Source = typeof SOURCES[number];
-type Day = { views: number; browsers: number; sources: Record<Source, number> };
-type Totals = { views: number };
+export type Source = typeof SOURCES[number];
+export type Day = { views: number; browsers: number; sources: Record<Source, number> };
+export interface CounterStore {
+  increment(day: string, first: boolean, source: Source, limit: number): Promise<boolean>;
+  recent(from: string, to: string): Promise<Array<Day & { date: string }>>;
+  total(): Promise<number>;
+}
 const ORIGIN = "https://nohrikha.com";
 const TOKEN_TTL = 90_000;
 const WINDOW_MS = 60_000;
@@ -19,13 +23,14 @@ const WINDOW_REQUESTS = 180;
 const MAX_TOKENS = 1024;
 const NO_STORE = { "Cache-Control": "no-store" };
 
-export function dayAt(now: number): string {
-  return new Intl.DateTimeFormat("sv-SE", {
+const dayFormat = new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Europe/Moscow",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(now);
+});
+export function dayAt(now: number): string {
+  return dayFormat.format(now);
 }
 
 function emptyDay(): Day {
@@ -56,7 +61,7 @@ function decode(text: string): Uint8Array<ArrayBuffer> {
 }
 
 export async function createCounter(
-  kv: Deno.Kv,
+  store: CounterStore,
   secret: string,
   options: { now?: () => number; maxDailyViews?: number } = {},
 ) {
@@ -78,7 +83,7 @@ export async function createCounter(
     false,
     ["sign", "verify"],
   );
-  const usedTokens = new Map<string, number>(); // Bounded, volatile, never written to KV.
+  const usedTokens = new Map<string, number>(); // Bounded, volatile, never persisted.
   let windowStart = now();
   let windowRequests = 0;
   let cachedStats: { day: string; until: number; value: unknown } | undefined;
@@ -221,34 +226,8 @@ export async function createCounter(
     // result is uncertain. Multiple instances/restarts can still permit replay.
     usedTokens.set(body.token, time + TOKEN_TTL);
     const day = dayAt(time);
-    for (let attempt = 0; attempt < 8; attempt++) {
-      const [entry, totalEntry] = await kv.getMany<[Day, Totals]>([
-        ["daily", day],
-        ["totals"],
-      ], { consistency: "strong" });
-      const current = entry.value ?? emptyDay();
-      const total = totalEntry.value ?? { views: 0 };
-      if (current.views >= maxDailyViews) {
-        return json({ error: "daily limit" }, 429);
-      }
-      if (!Number.isSafeInteger(total.views + 1)) {
-        return json({ error: "limit" }, 429);
-      }
-      const next: Day = {
-        views: current.views + 1,
-        browsers: current.browsers + (body.first ? 1 : 0),
-        sources: { ...current.sources },
-      };
-      if (body.first) next.sources[body.source as Source]++;
-      const result = await kv.atomic().check(entry, totalEntry)
-        .set(entry.key, next).set(totalEntry.key, { views: total.views + 1 })
-        .commit();
-      if (result.ok) return json({ accepted: true });
-      await new Promise((resolve) =>
-        setTimeout(resolve, 2 + Math.random() * 8)
-      );
-    }
-    return json({ error: "busy" }, 503);
+    const accepted = await store.increment(day, body.first, body.source, maxDailyViews);
+    return accepted ? json({ accepted: true }) : json({ error: "daily limit" }, 429);
   }
 
   async function stats(): Promise<unknown> {
@@ -263,24 +242,18 @@ export async function createCounter(
       for (let offset = -29; offset <= 0; offset++) {
         days.set(shiftedDay(day, offset), emptyDay());
       }
-      for await (
-        const entry of kv.list<Day>({ prefix: ["daily"] }, {
-          reverse: true,
-          limit: 30,
-        })
-      ) {
-        const date = String(entry.key[1]);
-        if (date >= from && date <= day) days.set(date, entry.value);
+      for (const entry of await store.recent(from, day)) {
+        days.set(entry.date, entry);
       }
       const sources = emptyDay().sources;
       for (const value of days.values()) {
         for (const source of SOURCES) sources[source] += value.sources[source];
       }
-      const total = await kv.get<Totals>(["totals"], { consistency: "strong" });
+      const total = await store.total();
       const value = {
         day,
         today: days.get(day),
-        totalViews: total.value?.views ?? 0,
+        totalViews: total,
         days: [...days].slice(-7).map(([date, count]) => ({
           date,
           views: count.views,
@@ -350,13 +323,4 @@ export async function createCounter(
       return json({ error: "temporarily unavailable" }, 503);
     }
   };
-}
-
-if (import.meta.main) {
-  const secret = Deno.env.get("COUNTER_SIGNING_KEY") ?? "";
-  const maxDailyViews = Number(Deno.env.get("MAX_DAILY_VIEWS") ?? "5000");
-  // Deploy supplies the assigned database; local runs may use an explicit path.
-  const kv = await Deno.openKv(Deno.env.get("COUNTER_KV_PATH"));
-  const handler = await createCounter(kv, secret, { maxDailyViews });
-  Deno.serve({ port: Number(Deno.env.get("PORT") ?? "8000") }, handler);
 }

@@ -87,6 +87,8 @@ for lang, prefix in [('ru', ''), ('en', 'en/')]:
     print('PASS', lang, 'approved story paragraphs, names, contextual play links, complete verbatim play and page metadata')
 
 for file in ROOT.rglob('*.html'):
+    if {'.git', 'node_modules', '.wrangler'} & set(file.parts):
+        continue
     text = file.read_text()
     assert not re.search(r'[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}', text), ('Private email in HTML', file)
     assert 'mailto:' not in text and 'tel:' not in text, file

@@ -1,0 +1,21 @@
+{
+  "name": "nohrikha-counter",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "bundle": "esbuild worker.ts --bundle --format=esm --target=es2022 --outfile=worker.bundle.js",
+    "dev": "wrangler dev --local",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261019.1",
+    "esbuild": "0.28.2",
+    "miniflare": "5.20261019.0-beta",
+    "typescript": "5.9.3",
+    "wrangler": "4.151.2"
+  }
+}

@@ -23,7 +23,7 @@ class Page(HTMLParser):
         if data.strip():
             self.text.append(data.strip())
 
-files = {f: Page(f.read_text()) for f in ROOT.rglob('*.html') if '.git' not in f.parts}
+files = {f: Page(f.read_text()) for f in ROOT.rglob('*.html') if not {'.git', 'node_modules', '.wrangler'} & set(f.parts)}
 assert set(files) == {ROOT / folder / name for folder in LOCALES for name in PAGES}
 assert not (ROOT / 'de').exists() and not (ROOT / 'kz').exists()
 for file, page in files.items():
