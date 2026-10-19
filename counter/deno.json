@@ -1,0 +1,8 @@
+{
+  "unstable": ["kv"],
+  "tasks": {
+    "start": "deno run --allow-env --allow-net --allow-read --allow-write server.ts",
+    "test": "deno test --allow-read --allow-write --allow-env server_test.ts",
+    "check": "deno check server.ts server_test.ts"
+  }
+}

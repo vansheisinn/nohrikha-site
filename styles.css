@@ -34,6 +34,19 @@
   .innerhead .contact-title{font-size:clamp(36px,13vw,62px);overflow-wrap:normal;word-break:normal;hyphens:none}
 }
 
+/* Own aggregate counter: shown only after the configured server responds. */
+.visitor-counter{flex-basis:100%;min-width:0;border-top:1px solid var(--rule);padding-top:18px;font-size:15px;color:var(--body)}
+.visitor-counter summary{cursor:pointer;color:var(--olive-dark);line-height:1.7;overflow-wrap:normal}
+.visitor-counter-panel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:30px;max-width:850px;margin-top:22px}
+.visitor-counter-panel h2{font:600 17px/1.5 var(--sans);color:var(--ink);margin:0 0 12px}
+.visitor-counter table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.visitor-counter th,.visitor-counter td{padding:7px 4px;border-bottom:1px solid var(--rule);text-align:right;font-weight:400}
+.visitor-counter th:first-child{text-align:left}
+.visitor-counter thead th{font-weight:600}
+.visitor-counter ul{list-style:none;margin:0;padding:0;line-height:2}
+.visitor-counter-note{font-size:13px;margin:18px 0 0;color:var(--muted)}
+@media(max-width:700px){.visitor-counter-panel{grid-template-columns:minmax(0,1fr);gap:24px}.visitor-counter summary{font-size:14px}}
+
 /* Authorized play: retain source line breaks and spacing in the archive typeface. */
 .play-original{margin:50px 0}.play-text{white-space:pre-wrap;overflow-wrap:anywhere;font:22px/1.75 var(--serif);color:#453c35}.play-act,.play-scene,.play-cast,.play-speaker{font-weight:600}.play-act{font-size:1.3em;scroll-margin-top:30px}.play-scene{font-size:1.1em;scroll-margin-top:30px}
 @media(max-width:700px){.play-text{font-size:20px}.play-original{margin:35px 0}}
