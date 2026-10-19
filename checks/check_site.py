@@ -3,6 +3,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlsplit, unquote
 from urllib.robotparser import RobotFileParser
+import hashlib
 import subprocess
 import xml.etree.ElementTree as ET
 
@@ -22,7 +23,7 @@ class Page(HTMLParser):
         if data.strip():
             self.text.append(data.strip())
 
-files = {f: Page(f.read_text()) for f in ROOT.rglob('*.html') if '.git' not in f.parts}
+files = {f: Page(f.read_text()) for f in ROOT.rglob('*.html') if not {'.git', 'node_modules', '.wrangler'} & set(f.parts)}
 assert set(files) == {ROOT / folder / name for folder in LOCALES for name in PAGES}
 assert not (ROOT / 'de').exists() and not (ROOT / 'kz').exists()
 for file, page in files.items():
@@ -49,6 +50,17 @@ for file, page in files.items():
     assert metadata['twitter:card'] == 'summary_large_image', file
     assert metadata['twitter:title'] == metadata['og:title'], file
     assert metadata['twitter:description'] == metadata['og:description'] == metadata['description'], file
+    scripts = [a for tag, a in head.tags if tag == 'script' and a.get('src')]
+    counter_positions = []
+    for name in ['counter-config.js', 'visitor-counter.js']:
+        matching = [(i, a) for i, a in enumerate(scripts) if urlsplit(a['src']).path.split('/')[-1] == name]
+        assert len(matching) == 1, (file, name)
+        position, attrs = matching[0]
+        assert 'defer' in attrs, (file, name)
+        version = hashlib.sha256((ROOT / name).read_bytes()).hexdigest()[:12]
+        assert urlsplit(attrs['src']).query == 'v=' + version, (file, name, 'stale asset version')
+        counter_positions.append(position)
+    assert counter_positions[0] < counter_positions[1], (file, 'counter config must load first')
     robots = [a for t, a in page.tags if t == 'meta' and a.get('name', '').lower() == 'robots']
     assert len(robots) == 1 and {d.strip().lower() for d in robots[0]['content'].split(',')} == {'index', 'follow'}, file
     bot_directives = [a for t, a in page.tags if t == 'meta' and a.get('name', '').lower() in {'robots', 'googlebot', 'bingbot', 'yandex'}]
