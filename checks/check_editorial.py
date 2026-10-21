@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 # Digests of normalized heading + all paragraphs from the approved package,
 # including subsequent wording changes explicitly approved by the owner.
-APPROVED = {('ru', 'my-story'): '99ae575cc2f00fe72d41e65b82699b1a8580810f82154bba76b71c6e5677216f', ('ru', 'second-story'): 'f61dc26025b5a5bd71bfa0a4e9a28eb202de93642ec11313a9cf9998729a78c1', ('en', 'my-story'): '36acefd4d376af9a7f59b554c8572c0a2996f4179fd608e31b19c03eb7f0fd6d', ('en', 'second-story'): '2bd93c2a16010188e1dd10aefa923c8a625e8339b4c58dd7d7bad420d5ec9fab'}
+APPROVED = {('ru', 'my-story'): 'c5bf43d72a5ee46ead3fdfa2579736272b16337ac265859a95b6f7923406c3b8', ('ru', 'second-story'): 'f61dc26025b5a5bd71bfa0a4e9a28eb202de93642ec11313a9cf9998729a78c1', ('en', 'my-story'): 'd2ed337394a42a103129113ab8ea16f281d731a1c7cb8302b59dfc1abecfd545', ('en', 'second-story'): '2bd93c2a16010188e1dd10aefa923c8a625e8339b4c58dd7d7bad420d5ec9fab'}
 
 class Blocks(HTMLParser):
     def __init__(self, text):

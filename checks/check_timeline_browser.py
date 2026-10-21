@@ -8,7 +8,7 @@ from pathlib import Path
 from playwright.sync_api import expect, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
-TARGETS = ['1942', '1954', '1942', '1954', '1939', '1941', '1946-1950']
+TARGETS = ['1942', '1954', '1942', '1954', '1938', '1941', '1946-1950']
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -111,11 +111,11 @@ try:
                 page.locator('.timeline-point').nth(index).tap()
                 expect_destination(page, event_id)
             page.close()
-        print('PASS 14 touch navigations, including the adjacent 1939/1941 points')
+        print('PASS 14 touch navigations, including the adjacent 1938/1941 points')
 
         page = new_page(browser, viewport={'width': 1440, 'height': 900})
         page.goto(f'{base}/timeline.html')
-        point = page.locator('.timeline-point[href="#event-1939"]')
+        point = page.locator('.timeline-point[href="#event-1938"]')
         point.hover()
         tooltip = page.get_by_role('tooltip')
         tooltip.hover()
@@ -124,16 +124,16 @@ try:
         page.keyboard.press('Escape')
         expect(tooltip).to_be_hidden()
         point.click()
-        target = expect_destination(page, '1939')
-        page.wait_for_function('''() => getComputedStyle(document.getElementById('event-1939')).backgroundColor !== 'rgb(255, 253, 250)' ''')
+        target = expect_destination(page, '1938')
+        page.wait_for_function('''() => getComputedStyle(document.getElementById('event-1938')).backgroundColor !== 'rgb(255, 253, 250)' ''')
         point.click()
-        expect_destination(page, '1939')
+        expect_destination(page, '1938')
         assert target.evaluate('(e) => e.getAnimations()[0].currentTime < 1000')
         expect(target).not_to_have_class('event event-highlight', timeout=4000)
         assert target.evaluate('(e) => getComputedStyle(e).backgroundColor') == 'rgb(255, 253, 250)'
         page.emulate_media(reduced_motion='reduce')
         point.click()
-        target = expect_destination(page, '1939')
+        target = expect_destination(page, '1938')
         assert target.evaluate('(e) => e.getAnimations().length') == 0
         assert target.evaluate('(e) => getComputedStyle(e).backgroundColor') == 'rgb(234, 227, 206)'
         expect(target).not_to_have_class('event event-highlight', timeout=4000)
