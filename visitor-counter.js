@@ -15,6 +15,7 @@
   var english = document.documentElement.lang === 'en';
   var showStats = location.pathname === '/contact.html' || location.pathname === '/en/contact.html';
   var labels = english ? {
+    loading: 'Loading statistics…', unavailable: 'Statistics are temporarily unavailable.',
     today: 'Visitors today', total: 'Total page views', days: 'Last 7 days',
     sources: 'Sources · last 30 days', date: 'Date', visitors: 'Visitors', views: 'Views',
     note: 'Approximate figures since the counter was enabled.',
@@ -22,6 +23,7 @@
     empty: 'No data yet', direct: 'Direct / unknown', google: 'Google', yandex: 'Yandex',
     bing: 'Bing', telegram: 'Telegram', whatsapp: 'WhatsApp', social: 'Social networks', other: 'Other websites'
   } : {
+    loading: 'Загрузка статистики…', unavailable: 'Статистика временно недоступна.',
     today: 'Посетителей сегодня', total: 'Всего просмотров', days: 'Последние 7 дней',
     sources: 'Источники · последние 30 дней', date: 'Дата', visitors: 'Посетители', views: 'Просмотры',
     note: 'Приблизительные данные с момента подключения счётчика.',
@@ -31,6 +33,7 @@
   };
   var counted = false;
   var widget;
+  var statsGeneration = 0;
 
   function source() {
     // Classify locally; never transmit referrer URLs, query strings or arbitrary labels.
@@ -55,7 +58,7 @@
 
   async function request(path, body) {
     var controller = new AbortController();
-    var timeout = setTimeout(function () { controller.abort(); }, 2000);
+    var timeout = setTimeout(function () { controller.abort(); }, 10000);
     try {
       var response = await fetch(endpoint + path, {
         method: body ? 'POST' : 'GET',
@@ -80,18 +83,32 @@
     return node;
   }
 
+  function renderStatus(message, busy) {
+    // Keep the last valid figures during a refresh; never replace them with zero.
+    if (widget && widget.querySelector('.visitor-counter-panel')) return;
+    var footer = document.querySelector('.footerin');
+    if (!footer) return;
+    if (!widget) {
+      widget = element('details', undefined, footer);
+      widget.className = 'visitor-counter';
+      element('summary', message, widget);
+    } else { widget.querySelector('summary').textContent = message; }
+    widget.setAttribute('aria-busy', String(busy));
+  }
+
   function render(data) {
     if (!data || !date(data.day) || !data.today || !number(data.today.browsers) ||
       !number(data.totalViews) || !Array.isArray(data.days) || data.days.length !== 7 ||
       !data.days.every(function (row) { return row && date(row.date) && number(row.views) && number(row.browsers); }) ||
-      !data.sources || !sources.every(function (name) { return number(data.sources[name]); })) return;
+      !data.sources || !sources.every(function (name) { return number(data.sources[name]); })) return false;
     var footer = document.querySelector('.footerin');
-    if (!footer) return;
+    if (!footer) return false;
     var wasOpen = Boolean(widget && widget.open);
     if (widget) widget.remove();
     widget = element('details', undefined, footer);
     widget.className = 'visitor-counter';
     widget.open = wasOpen;
+    widget.setAttribute('aria-busy', 'false');
     element('summary', labels.today + ': ≈ ' + count(data.today.browsers) + ' · ' +
       labels.total + ': ' + count(data.totalViews), widget);
     var panel = element('div', undefined, widget);
@@ -123,11 +140,22 @@
     if (!list.children.length) element('li', labels.empty, list);
     element('p', labels.note, widget).className = 'visitor-counter-note';
     if (data.capped) element('p', labels.capped, widget).className = 'visitor-counter-note';
+    return true;
+  }
+
+  async function loadStats() {
+    var generation = ++statsGeneration;
+    renderStatus(labels.loading, true);
+    var data = await request('/stats');
+    if (generation !== statsGeneration) return;
+    if (!render(data)) renderStatus(labels.unavailable, false);
   }
 
   async function record() {
     if (counted || document.visibilityState !== 'visible') return;
     counted = true;
+    // Read-only statistics must not wait for a slow or failed write request.
+    if (showStats) void loadStats();
     var visitorSource = source();
     var challenge = await request('/challenge');
     if (challenge && date(challenge.day) && typeof challenge.token === 'string' && challenge.token.length < 300) {
@@ -145,7 +173,6 @@
         try { await navigator.locks.request(key, submit); } catch (_) { /* fail closed */ }
       } else { await submit(); }
     }
-    if (showStats) render(await request('/stats'));
   }
 
   document.addEventListener('visibilitychange', function () { void record(); });

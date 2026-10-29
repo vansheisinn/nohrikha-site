@@ -63,7 +63,7 @@ class Mock:
             await route.fulfill(status=503, headers=headers, body='{}')
             return
         if self.mode == 'timeout':
-            await asyncio.sleep(2.2)
+            await asyncio.sleep(10.2)
             try:
                 await route.fulfill(status=503, headers=headers, body='{}')
             except Exception:
@@ -72,6 +72,10 @@ class Mock:
         if self.mode == 'malformed':
             await route.fulfill(headers=headers, body='{"days":"<script>throw 1</script>"}')
             return
+        if self.mode == 'slow_stats' and url.path == '/stats':
+            await asyncio.sleep(2.2)
+        if self.mode == 'slow_collection' and url.path in ['/challenge', '/collect']:
+            await asyncio.sleep(2.2)
         if url.path == '/challenge':
             data = {'day': self.day, 'token': 'local-test-token-' + str(len(self.calls))}
         elif url.path == '/collect':
@@ -95,10 +99,10 @@ class Mock:
         await route.fulfill(headers=headers, body=json.dumps(data))
 
 
-async def settle(page, mock, views):
+async def settle(page, mock, views, timeout_ms=2500):
     shows_stats = urlsplit(page.url).path in ['/contact.html', '/en/contact.html']
-    for _ in range(100):
-        if sum(d['views'] for d in mock.daily.values()) >= views and await page.locator('.visitor-counter').count() == int(shows_stats):
+    for _ in range(timeout_ms // 25):
+        if sum(d['views'] for d in mock.daily.values()) >= views and await page.locator('.visitor-counter-panel').count() == int(shows_stats):
             return
         await page.wait_for_timeout(25)
     raise AssertionError(('counter did not settle', views, mock.posts))
@@ -278,6 +282,32 @@ async def main():
         await context.close()
         print('PASS hidden preload waits for visibility, technical GitHub Pages host never writes production data')
 
+        for prefix, loading in [('', 'Загрузка статистики…'), ('/en', 'Loading statistics…')]:
+            mock = Mock(mode='slow_stats')
+            context = await context_for(browser, mock)
+            page = await context.new_page()
+            await page.goto(SITE + prefix + '/contact.html')
+            assert await page.locator('.visitor-counter summary').inner_text() == loading
+            assert await page.locator('.visitor-counter').get_attribute('aria-busy') == 'true'
+            assert await page.locator('#feedback-form button[type=submit]').is_enabled()
+            await settle(page, mock, 1, timeout_ms=6000)
+            assert await page.locator('.visitor-counter').get_attribute('aria-busy') == 'false'
+            assert len(mock.posts) == 1
+            await context.close()
+        print('PASS RU/EN statistics delayed over 2 seconds: loading state, then real figures, form remains enabled')
+
+        mock = Mock(mode='slow_collection')
+        context = await context_for(browser, mock)
+        page = await context.new_page()
+        await page.goto(SITE + '/contact.html')
+        await page.locator('.visitor-counter-panel').wait_for(state='attached', timeout=1500)
+        assert await page.locator('.visitor-counter').get_attribute('aria-busy') == 'false'
+        assert not mock.posts, 'Read-only figures should not wait for collection'
+        await settle(page, mock, 1, timeout_ms=8000)
+        assert len(mock.posts) == 1
+        await context.close()
+        print('PASS statistics load independently while collection is slow; only one write request')
+
         for mode in ['down', 'timeout', 'malformed']:
             mock = Mock(mode=mode)
             context = await context_for(browser, mock)
@@ -285,13 +315,15 @@ async def main():
             errors = []
             page.on('pageerror', lambda error: errors.append(str(error)))
             await page.goto(SITE + '/contact.html')
-            await page.wait_for_timeout(4500 if mode == 'timeout' else 250)
-            assert not await page.locator('.visitor-counter').count()
+            await page.wait_for_timeout(10750 if mode == 'timeout' else 250)
+            assert await page.locator('.visitor-counter summary').inner_text() == 'Статистика временно недоступна.'
+            assert await page.locator('.visitor-counter').get_attribute('aria-busy') == 'false'
+            assert not await page.locator('.visitor-counter-panel').count()
             assert await page.locator('#feedback-form button[type=submit]').is_enabled()
             assert not errors and len(mock.calls) <= 2
             assert await page.evaluate('localStorage.length') == 0
             await context.close()
-        print('PASS outages, real fetch timeouts, malformed data: form/navigation survive, no retries or page errors')
+        print('PASS outages, real 10-second timeouts, malformed data: explicit unavailable state, no invented figures, retries or page errors')
         await browser.close()
 
 
